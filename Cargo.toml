@@ -1,0 +1,9 @@
+[package]
+name = "convert"
+version = "0.1.0"
+authors = ["Xanzis <xander@xanderh.me>"]
+edition = "2020"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
