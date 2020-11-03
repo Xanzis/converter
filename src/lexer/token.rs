@@ -1,13 +1,13 @@
 use std::string::String;
 use std::ops::Add;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct FloatInProg {
 	pub value: f64,
 	depth: i64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Token {
 	UnitString(String),
 	Integer(i64),
@@ -17,6 +17,7 @@ pub enum Token {
 	AddOp(char), // + -
 	OpenParen, // (
 	CloseParen, // )
+	NoToken,
 }
 
 impl Token {

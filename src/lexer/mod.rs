@@ -1,6 +1,6 @@
-mod token;
+pub mod token;
 
-use token::Token;
+pub use token::Token;
 use std::string::String;
 use std::str;
 use std::fmt;
