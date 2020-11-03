@@ -39,9 +39,9 @@ impl fmt::Debug for ParseError {
 pub fn parse(mut input: Vec<Token>) -> Result<Expression, ParseError> {
 	// takes a vector of tokens, parses into a single nested expression
 	input.reverse();
-	let (fin_tokens, exp) = expression(input);
+	let exp = expression(&mut input);
 	// all tokens should have been consumed
-	if fin_tokens.len() == 0 {
+	if input.len() == 0 {
 		return Ok(exp)
 	}
 	println!("{:?}", exp);
@@ -50,95 +50,89 @@ pub fn parse(mut input: Vec<Token>) -> Result<Expression, ParseError> {
 
 // for all of these parsing functions, the order of tokens should be reversed
 
-fn expression(tokens: Vec<Token>) -> (Vec<Token>, Expression) {
+fn expression(tokens: &mut Vec<Token>) -> Expression {
 	// parses an expression in a vector of tokens
-	// returns the expression and the remaining tokens
-	let (new_tokens, res) = term(tokens);
-	(new_tokens, res)
+	term(tokens)
 }
 
-fn term(tokens: Vec<Token>) -> (Vec<Token>, Expression) {
+fn term(tokens: &mut Vec<Token>) -> Expression {
 	// parses a term in a vector of tokens
-	// returns the term as an Expression and the remaining tokens
-	let (mut tokens, res_inter) = factor(tokens);
+	let mut res_inter = factor(tokens);
 
-	if let Some(x) = tokens.pop() {
+	while let Some(x) = tokens.pop() {
 		match x {
 			Token::AddOp(c) => {
 				// recurse, generating a nested expression
-				let (tokens, res_lower) = term(tokens);
+				let res_lower = term(tokens);
 				// return the obtained expression
-				(tokens, Expression::Binary(Box::new(res_inter), c, Box::new(res_lower)))
+				res_inter = Expression::Binary(Box::new(res_inter), c, Box::new(res_lower));
 			}
 			_ => {
 				// replace the removed token and return
 				tokens.push(x);
-				(tokens, res_inter)
+				return res_inter
 			}
 		}
 	}
-	else {
-		// tokens was empty
-		(tokens, res_inter)
-	}
+
+	// out of tokens - return the current expression
+	res_inter
 }
 
-fn factor(tokens: Vec<Token>) -> (Vec<Token>, Expression) {
-	let (mut tokens, res_inter) = quantity(tokens);
+fn factor(tokens: &mut Vec<Token>) -> Expression {
+	let mut res_inter = quantity(tokens);
 
-	if let Some(x) = tokens.pop() {
+	while let Some(x) = tokens.pop() {
 		// same overall logic as term()
 		match x {
 			Token::FactOp(c) => {
-				let (tokens, res_lower) = quantity(tokens);
-				(tokens, Expression::Binary(Box::new(res_inter), c, Box::new(res_lower)))
+				let res_lower = quantity(tokens);
+				res_inter = Expression::Binary(Box::new(res_inter), c, Box::new(res_lower))
 			}
 			_ => {
 				tokens.push(x);
-				(tokens, res_inter)
+				return res_inter
 			}
 		}
 	}
-	else {
-		(tokens, res_inter)
-	}
+	res_inter
 }
 
-fn quantity(tokens: Vec<Token>) -> (Vec<Token>, Expression) {
+fn quantity(tokens: &mut Vec<Token>) -> Expression {
 	// consume a primary plus an optional unit_pow
 	// TODO allow arbitrarily many unit_pows
-	let (tokens, res_inter) = primary(tokens);
+	let res_inter = primary(tokens);
 
 	match tokens.last() {
-		None => (tokens, res_inter),
+		None => res_inter,
 		Some(Token::UnitString(_)) => {
 			// next expression is a unit_pow
-			if let Some((tokens, res_unit)) = unit_pow(tokens) {
-				return (tokens, Expression::Quantity(Box::new(res_inter), Box::new(res_unit)))
+			if let Some(res_unit) = unit_pow(tokens) {
+				return Expression::Quantity(Box::new(res_inter), Box::new(res_unit))
 			}
 			else { panic!("began with unitstring but wasn't unit_pow") }
 		}
-		_ => (tokens, res_inter)
+		_ => res_inter
 	}
 }
 
-fn unit_pow(mut tokens: Vec<Token>) -> Option<(Vec<Token>, Expression)> {
+fn unit_pow(tokens: &mut Vec<Token>) -> Option<Expression> {
 	let cur = tokens.pop();
 	if let Some(Token::UnitString(s)) = cur {
 		let pow = tokens.pop();
 		match pow {
 			Some(Token::Integer(i)) => {
 				// return a unit with a power
-				return Some((tokens, Expression::UnitPow(s, i)))
+				return Some(Expression::UnitPow(s, i))
 			}
 			None => {
 				// no more tokens - return a bare unit
-				return Some((tokens, Expression::Unit(s)))
+				return Some(Expression::Unit(s))
 			}
 			_ => {
 				// non-power token - push pow and return a bare unit
 				tokens.push(pow.unwrap());
-				return Some((tokens, Expression::Unit(s)))
+				return Some(Expression::Unit(s))
 			}
 		}
 	}
@@ -146,19 +140,18 @@ fn unit_pow(mut tokens: Vec<Token>) -> Option<(Vec<Token>, Expression)> {
 	None
 }
 
-fn primary(mut tokens: Vec<Token>) -> (Vec<Token>, Expression) {
+fn primary(tokens: &mut Vec<Token>) -> Expression {
 	// parse a primary value, recursively calling expression if ()s are encountered
 	match tokens.pop() {
-		Some(Token::Integer(i)) => (tokens, Expression::PrimaryInt(i)),
-		Some(Token::Float(f)) => (tokens, Expression::PrimaryFloat(f)),
+		Some(Token::Integer(i)) => Expression::PrimaryInt(i),
+		Some(Token::Float(f)) => Expression::PrimaryFloat(f),
 		Some(Token::OpenParen) => {
 			// parse the expression, consume the trailing close paren
-			let (mut tokens, res_lower) = expression(tokens);
-			match tokens.pop() {
-				Some(Token::CloseParen) => (),
-				_ => panic!("primary: expected )"),
+			let res_lower = expression(tokens);
+			if let Some(Token::CloseParen) = tokens.pop() {
+				res_lower
 			}
-			(tokens, res_lower)
+			else { panic!("primary: expected )") }
 		}
 		None => panic!("primary: ran out of tokens"),
 		_ => panic!("primary: unexpected token"),
