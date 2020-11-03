@@ -30,4 +30,14 @@ mod tests {
 		let exp = Binary(Box::new(PrimaryInt(3)), '+', Box::new(PrimaryFloat(0.27)));
 		assert_eq!(parsed, exp);
 	}
+
+	#[test]
+	fn paren_parse() {
+		let in_str = "1 / (2 + 3)";
+		let lexed = lex(in_str).unwrap();
+		let parsed = parse(lexed).unwrap();
+		let lower = Binary(Box::new(PrimaryInt(2)), '+', Box::new(PrimaryInt(3)));
+		let exp = Binary(Box::new(PrimaryInt(1)), '/', Box::new(lower));
+		assert_eq!(exp, parsed);
+	}
 }
