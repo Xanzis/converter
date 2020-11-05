@@ -32,11 +32,11 @@ fn main() {
     		if input == "break" {
     			break
     		}
-    		println!("result is:\n{:?}", run(input));
+    		println!("result is:\n{}", run(input));
     	}
 	}
 	else {
 		let input = args.get(1).unwrap();
-		println!("result is:\n{:?}", run(input));
+		println!("result is:\n{}", run(input));
 	}
 }

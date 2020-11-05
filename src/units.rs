@@ -3,7 +3,7 @@ use derive_more::{Add, Mul};
 
 use std::ops::Mul;
 use std::ops::Add;
-use std::fmt::Debug;
+use std::fmt::{self, Debug};
 
 #[derive(Debug)]
 pub struct SiValue {
@@ -29,6 +29,21 @@ impl SiValue {
 			unit: self.unit * i,
 		}
 	}
+}
+
+impl fmt::Display for SiValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.real)?;
+        let pows = vec![self.unit.meter, self.unit.second, self.unit.mole, self.unit.ampere, 
+        	self.unit.kelvin, self.unit.candela, self.unit.kilogram];
+        let names = vec!["m", "s", "mol", "A", "K", "cd", "kg"];
+        for (i, p) in pows.iter().enumerate() {
+        	if *p != 0 {
+        		write!(f, " {}{}", names[i], p)?
+        	}
+        }
+        Ok(())
+    }
 }
 
 impl Mul<f64> for SiValue {
