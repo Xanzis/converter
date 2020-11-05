@@ -1,21 +1,48 @@
-use convert::lexer::lex;
-use convert::parser::parse;
+use convert::lexer::{lex, LexError};
+use convert::parser::{parse, ParseError};
 use convert::evaluator::evaluate;
 use convert::units::SiValue;
 
 use std::env;
 use std::string::String;
 use std::io;
+use std::error;
+use std::fmt;
 
-fn run(input: &str) -> SiValue {
-	let toks = lex(input).unwrap();
-	// println!("lexed tokens:\n{:?}", toks);
-	let exp = parse(toks).unwrap();
-	// println!("parsed expression:\n{:?}", exp);
-	evaluate(exp)
+#[derive(Clone, Debug)]
+struct ConvertError {
+	message: String,
 }
 
-fn main() {
+impl error::Error for ConvertError {}
+
+impl fmt::Display for ConvertError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl From<LexError> for ConvertError {
+	fn from(e: LexError) -> Self {
+		ConvertError { message: format!("convert_error: {}", e) }
+	}
+}
+
+impl From<ParseError> for ConvertError {
+	fn from(e: ParseError) -> Self {
+		ConvertError { message: format!("convert_error: {}", e) }
+	}
+}
+
+fn run(input: &str) -> Result<SiValue, ConvertError> {
+	let toks = lex(input)?;
+	// println!("lexed tokens:\n{:?}", toks);
+	let exp = parse(toks)?;
+	// println!("parsed expression:\n{:?}", exp);
+	Ok(evaluate(exp))
+}
+
+fn main() -> Result<(), ConvertError> {
 	let args: Vec<String> = env::args().collect();
 
 	if args.len() != 2 { panic!("please supply exactly one argument (-i for interactive mode)"); }
@@ -32,11 +59,13 @@ fn main() {
     		if input == "break" {
     			break
     		}
-    		println!("result is:\n{}", run(input));
+    		println!("result is:\n{}", run(input)?);
     	}
 	}
 	else {
 		let input = args.get(1).unwrap();
-		println!("result is:\n{}", run(input));
+		println!("result is:\n{}", run(input)?);
 	}
+
+	Ok(())
 }

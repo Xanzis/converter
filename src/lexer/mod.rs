@@ -12,14 +12,14 @@ pub struct LexError {
 }
 impl fmt::Display for LexError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "lex_error: {}", self.message)
+        write!(f, "{}", self.message)
     }
 }
 
 impl From<TokenError> for LexError {
 	fn from(e: TokenError) -> Self {
 		// format will use tokenerror's display, which prepends "token_error"
-		LexError { message: format!("{}", e) }
+		LexError { message: format!("lex_error: {}", e) }
 	}
 }
 

@@ -28,13 +28,13 @@ pub struct ParseError {
 
 impl ParseError {
 	fn new(x: &str) -> ParseError {
-		ParseError {message: String::from(x)}
+		ParseError {message: format!("parse_error: {}", String::from(x))}
 	}
 }
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "parse_error: {}", self.message)
+        write!(f, "{}", self.message)
     }
 }
 
