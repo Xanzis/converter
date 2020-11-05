@@ -1,5 +1,7 @@
 pub mod lexer;
 pub mod parser;
+pub mod units;
+pub mod evaluator;
 
 #[cfg(test)]
 mod tests {
@@ -27,7 +29,7 @@ mod tests {
 		let in_str = "3 + 0.27";
 		let lexed = lex(in_str).unwrap();
 		let parsed = parse(lexed).unwrap();
-		let exp = Binary(Box::new(PrimaryInt(3)), '+', Box::new(PrimaryFloat(0.27)));
+		let exp = Box::new(Binary(Box::new(PrimaryInt(3)), '+', Box::new(PrimaryFloat(0.27))));
 		assert_eq!(parsed, exp);
 	}
 
@@ -37,7 +39,17 @@ mod tests {
 		let lexed = lex(in_str).unwrap();
 		let parsed = parse(lexed).unwrap();
 		let lower = Binary(Box::new(PrimaryInt(2)), '+', Box::new(PrimaryInt(3)));
-		let exp = Binary(Box::new(PrimaryInt(1)), '/', Box::new(lower));
+		let exp = Box::new(Binary(Box::new(PrimaryInt(1)), '/', Box::new(lower)));
+		assert_eq!(exp, parsed);
+	}
+
+	#[test]
+	fn trinary_parse() {
+		let in_str = "1 + 2 + 3";
+		let lexed = lex(in_str).unwrap();
+		let parsed = parse(lexed).unwrap();
+		let lower = Binary(Box::new(PrimaryInt(2)), '+', Box::new(PrimaryInt(3)));
+		let exp = Box::new(Binary(Box::new(PrimaryInt(1)), '+', Box::new(lower)));
 		assert_eq!(exp, parsed);
 	}
 }

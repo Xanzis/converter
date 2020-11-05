@@ -36,13 +36,13 @@ impl fmt::Debug for ParseError {
     }
 }
 
-pub fn parse(mut input: Vec<Token>) -> Result<Expression, ParseError> {
+pub fn parse(mut input: Vec<Token>) -> Result<Box<Expression>, ParseError> {
 	// takes a vector of tokens, parses into a single nested expression
 	input.reverse();
 	let exp = expression(&mut input);
 	// all tokens should have been consumed
 	if input.len() == 0 {
-		return Ok(exp)
+		return Ok(Box::new(exp))
 	}
 	println!("{:?}", exp);
 	Err(ParseError {message: "parser did not consume all tokens".to_string()})
