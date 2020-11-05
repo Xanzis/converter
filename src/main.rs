@@ -9,9 +9,9 @@ use std::io;
 
 fn run(input: &str) -> SiValue {
 	let toks = lex(input).unwrap();
-	println!("lexed tokens:\n{:?}", toks);
+	// println!("lexed tokens:\n{:?}", toks);
 	let exp = parse(toks).unwrap();
-	println!("parsed expression:\n{:?}", exp);
+	// println!("parsed expression:\n{:?}", exp);
 	evaluate(exp)
 }
 

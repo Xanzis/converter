@@ -1,24 +1,26 @@
 pub mod token;
 
-pub use token::Token;
+pub use token::{Token, TokenError};
 use std::string::String;
 use std::str;
 use std::fmt;
 
 //type Result<T> = std::result::Result<T, LexError>;
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct LexError {
 	message: String,
 }
 impl fmt::Display for LexError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "error in lexer")
+        write!(f, "lex_error: {}", self.message)
     }
 }
-impl fmt::Debug for LexError {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "error in lexer: {}", self.message)
-    }
+
+impl From<TokenError> for LexError {
+	fn from(e: TokenError) -> Self {
+		// format will use tokenerror's display, which prepends "token_error"
+		LexError { message: format!("{}", e) }
+	}
 }
 
 pub fn lex(input: &str) -> Result<Vec<Token>, LexError> {
@@ -34,7 +36,7 @@ pub fn lex(input: &str) -> Result<Vec<Token>, LexError> {
 		if let Some(ot) = ongoing_token {
 			if ot.is_continuation(c) {
 				// add to the ongoing token, skip to next loop
-				ongoing_token = Some(ot + c);
+				ongoing_token = Some((ot + c)?);
 				continue;
 			}
 			else {

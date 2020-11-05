@@ -1,5 +1,6 @@
 use crate::lexer::Token;
 use std::fmt;
+use std::error;
 
 // Using the following grammar:
 // expression -> term
@@ -20,99 +21,102 @@ pub enum Expression {
 	UnitPow(String, i64),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ParseError {
 	message: String,
 }
 
+impl ParseError {
+	fn new(x: &str) -> ParseError {
+		ParseError {message: String::from(x)}
+	}
+}
+
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "error in parser")
+        write!(f, "parse_error: {}", self.message)
     }
 }
-impl fmt::Debug for ParseError {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "error in parser: {}", self.message)
-    }
-}
+
+impl error::Error for ParseError {}
 
 pub fn parse(mut input: Vec<Token>) -> Result<Box<Expression>, ParseError> {
 	// takes a vector of tokens, parses into a single nested expression
 	input.reverse();
-	let exp = expression(&mut input);
+	let exp = expression(&mut input)?;
 	// all tokens should have been consumed
 	if input.len() == 0 {
 		return Ok(Box::new(exp))
 	}
 	println!("{:?}", exp);
-	Err(ParseError {message: "parser did not consume all tokens".to_string()})
+	Err(ParseError::new("parser did not consume all tokens"))
 }
 
 // for all of these parsing functions, the order of tokens should be reversed
 
-fn expression(tokens: &mut Vec<Token>) -> Expression {
+fn expression(tokens: &mut Vec<Token>) -> Result<Expression, ParseError> {
 	// parses an expression in a vector of tokens
 	term(tokens)
 }
 
-fn term(tokens: &mut Vec<Token>) -> Expression {
+fn term(tokens: &mut Vec<Token>) -> Result<Expression, ParseError> {
 	// parses a term in a vector of tokens
-	let mut res_inter = factor(tokens);
+	let mut res_inter = factor(tokens)?;
 
 	while let Some(x) = tokens.pop() {
 		match x {
 			Token::AddOp(c) => {
 				// recurse, generating a nested expression
-				let res_lower = term(tokens);
+				let res_lower = factor(tokens)?;
 				// return the obtained expression
 				res_inter = Expression::Binary(Box::new(res_inter), c, Box::new(res_lower));
 			}
 			_ => {
 				// replace the removed token and return
 				tokens.push(x);
-				return res_inter
+				return Ok(res_inter)
 			}
 		}
 	}
 
 	// out of tokens - return the current expression
-	res_inter
+	Ok(res_inter)
 }
 
-fn factor(tokens: &mut Vec<Token>) -> Expression {
-	let mut res_inter = quantity(tokens);
+fn factor(tokens: &mut Vec<Token>) -> Result<Expression, ParseError> {
+	let mut res_inter = quantity(tokens)?;
 
 	while let Some(x) = tokens.pop() {
 		// same overall logic as term()
 		match x {
 			Token::FactOp(c) => {
-				let res_lower = quantity(tokens);
+				let res_lower = quantity(tokens)?;
 				res_inter = Expression::Binary(Box::new(res_inter), c, Box::new(res_lower))
 			}
 			_ => {
 				tokens.push(x);
-				return res_inter
+				return Ok(res_inter)
 			}
 		}
 	}
-	res_inter
+	Ok(res_inter)
 }
 
-fn quantity(tokens: &mut Vec<Token>) -> Expression {
+fn quantity(tokens: &mut Vec<Token>) -> Result<Expression, ParseError> {
 	// consume a primary plus an optional unit_pow
 	// TODO allow arbitrarily many unit_pows
-	let res_inter = primary(tokens);
+	let res_inter = primary(tokens)?;
 
 	match tokens.last() {
-		None => res_inter,
+		None => Ok(res_inter),
 		Some(Token::UnitString(_)) => {
 			// next expression is a unit_pow
 			if let Some(res_unit) = unit_pow(tokens) {
-				return Expression::Quantity(Box::new(res_inter), Box::new(res_unit))
+				return Ok(Expression::Quantity(Box::new(res_inter), Box::new(res_unit)))
 			}
-			else { panic!("began with unitstring but wasn't unit_pow") }
+			else { Err(ParseError::new("began with unitstring but wasn't unit_pow")) }
 		}
-		_ => res_inter
+		_ => Ok(res_inter)
 	}
 }
 
@@ -140,20 +144,20 @@ fn unit_pow(tokens: &mut Vec<Token>) -> Option<Expression> {
 	None
 }
 
-fn primary(tokens: &mut Vec<Token>) -> Expression {
+fn primary(tokens: &mut Vec<Token>) -> Result<Expression, ParseError> {
 	// parse a primary value, recursively calling expression if ()s are encountered
 	match tokens.pop() {
-		Some(Token::Integer(i)) => Expression::PrimaryInt(i),
-		Some(Token::Float(f)) => Expression::PrimaryFloat(f),
+		Some(Token::Integer(i)) => Ok(Expression::PrimaryInt(i)),
+		Some(Token::Float(f)) => Ok(Expression::PrimaryFloat(f)),
 		Some(Token::OpenParen) => {
 			// parse the expression, consume the trailing close paren
-			let res_lower = expression(tokens);
+			let res_lower = expression(tokens)?;
 			if let Some(Token::CloseParen) = tokens.pop() {
-				res_lower
+				Ok(res_lower)
 			}
-			else { panic!("primary: expected )") }
+			else { Err(ParseError::new("primary: expected )")) }
 		}
-		None => panic!("primary: ran out of tokens"),
-		_ => panic!("primary: unexpected token"),
+		None => Err(ParseError::new("primary: ran out of tokens")),
+		_ => Err(ParseError::new("primary: unexpected token")),
 	}
 }

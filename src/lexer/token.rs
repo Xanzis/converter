@@ -1,5 +1,20 @@
 use std::string::String;
 use std::ops::Add;
+use std::error;
+use std::fmt;
+
+#[derive(Debug)]
+pub struct TokenError {
+	message: String,
+}
+
+impl fmt::Display for TokenError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "token_error: {}", self.message)
+    }
+}
+
+impl error::Error for TokenError {}
 
 #[derive(Debug, PartialEq)]
 pub struct FloatInProg {
@@ -28,7 +43,7 @@ impl Token {
 			Token::Integer(_) => c.is_digit(10) || (c == '.'), // will become float is + is used
 			Token::FloatIp(_) => c.is_digit(10), // no . allowed if value is already float
 			Token::FactOp(_) | Token::AddOp(_) | Token::OpenParen | Token::CloseParen => false,
-			_ => panic!("unexpected token")
+			_ => false,
 		}
 	}
 }
@@ -42,23 +57,23 @@ impl From<char> for Token {
 			'*' | '/' => Token::FactOp(c),
 			'(' => Token::OpenParen,
 			')' => Token::CloseParen,
-			_ => panic!("bad character: {}", c)
+			_ => Token::NoToken, // probably a decent error state
 		}
 	}
 }
 
 impl Add<char> for Token {
-	type Output = Token;
+	type Output = Result<Token, TokenError>;
 
-	fn add(self, rhs: char) -> Token {
+	fn add(self, rhs: char) -> Self::Output {
 		match self {
-			Token::UnitString(x) => Token::UnitString(x + &rhs.to_string()),
+			Token::UnitString(x) => Ok(Token::UnitString(x + &rhs.to_string())),
 
 			Token::Integer(x) => {
 				// shift and add for digits, convert to float for .
-				if let Some(r) = rhs.to_digit(10) { Token::Integer((x * 10) + (r as i64)) }
-				else if rhs == '.' { Token::FloatIp(FloatInProg {value: x as f64, depth: 1}) }
-				else { panic!("bad continuation of Integer: {}", rhs); }
+				if let Some(r) = rhs.to_digit(10) { Ok(Token::Integer((x * 10) + (r as i64))) }
+				else if rhs == '.' { Ok(Token::FloatIp(FloatInProg {value: x as f64, depth: 1})) }
+				else { Err(TokenError {message: format!("bad continuation of int: {}", rhs)}) }
 			}
 
 			Token::FloatIp(x) => {
@@ -67,12 +82,12 @@ impl Add<char> for Token {
 				let oom: f64 = 1.0 / (base.pow(x.depth as u32) as f64);
 				if let Some(r) = rhs.to_digit(10) {
 					let inc = oom * (r as f64);
-					Token::FloatIp(FloatInProg {value: x.value + inc, depth: x.depth + 1})
+					Ok(Token::FloatIp(FloatInProg {value: x.value + inc, depth: x.depth + 1}))
 				}
-				else { panic!("bad continuation of Float: {}", rhs); }
+				else { Err(TokenError {message: format!("bad continuation of float: {}", rhs)}) }
 			}
 
-			_ => panic!("invalid enum variant for method add")
+			_ => Err(TokenError {message: format!("invalid enum variant for method add: {:?}", self)})
 		}
 	}
 }
