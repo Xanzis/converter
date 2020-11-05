@@ -1,6 +1,6 @@
 use convert::lexer::{lex, LexError};
 use convert::parser::{parse, ParseError};
-use convert::evaluator::evaluate;
+use convert::evaluator::{evaluate, EvaluateError};
 use convert::units::SiValue;
 
 use std::env;
@@ -12,6 +12,12 @@ use std::fmt;
 #[derive(Clone, Debug)]
 struct ConvertError {
 	message: String,
+}
+
+impl ConvertError {
+	fn new(x: &str) -> ConvertError {
+		ConvertError {message: format!("convert_error: {}", String::from(x))}
+	}
 }
 
 impl error::Error for ConvertError {}
@@ -34,18 +40,26 @@ impl From<ParseError> for ConvertError {
 	}
 }
 
+impl From<EvaluateError> for ConvertError {
+	fn from(e: EvaluateError) -> Self {
+		ConvertError { message: format!("convert_error: {}", e) }
+	}
+}
+
 fn run(input: &str) -> Result<SiValue, ConvertError> {
 	let toks = lex(input)?;
 	// println!("lexed tokens:\n{:?}", toks);
 	let exp = parse(toks)?;
 	// println!("parsed expression:\n{:?}", exp);
-	Ok(evaluate(exp))
+	Ok(evaluate(exp)?)
 }
 
 fn main() -> Result<(), ConvertError> {
 	let args: Vec<String> = env::args().collect();
 
-	if args.len() != 2 { panic!("please supply exactly one argument (-i for interactive mode)"); }
+	if args.len() != 2 { 
+		return Err(ConvertError::new("please supply exactly one argument (-i for interactive mode)")) 
+	}
 
 	if args.iter().any(|i| i=="-i") {
     	// interative mode - accept input and evaluate in a loop
