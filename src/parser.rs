@@ -7,7 +7,7 @@ use std::error;
 // term       -> factor (("-" | "+") term)?
 // factor     -> quantity (("*" | "/") factor)?
 // quantity   -> primary unit_pow?
-// primary    -> i64 | f64 | "(" expression ")"
+// primary    -> i64 | f64 | "(" expression ")" | unit_pow
 // unit_pow   -> String (i64)?
 
 #[derive(Debug, PartialEq)]
@@ -156,6 +156,11 @@ fn primary(tokens: &mut Vec<Token>) -> Result<Expression, ParseError> {
 				Ok(res_lower)
 			}
 			else { Err(ParseError::new("primary: expected )")) }
+		}
+		Some(Token::UnitString(s)) => {
+			// return a unit_pow after returning the popped value
+			tokens.push(Token::UnitString(s));
+			Ok(unit_pow(tokens).unwrap()) // unwrap is ok because the none state is unreachable
 		}
 		None => Err(ParseError::new("primary: ran out of tokens")),
 		_ => Err(ParseError::new("primary: unexpected token")),
