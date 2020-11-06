@@ -99,11 +99,61 @@ impl From<String> for SiValue {
 	fn from(unit_name: String) -> Self {
 		// match unit names to SI values
 		match unit_name.as_str() {
+			// base SI units
 			"m" => SiValue {
 				real: 1.0,
 				unit: SiUnit {meter: 1, ..Default::default()},
 			},
-			_ => { panic!("uninplemented unit name"); },
+			"s" => SiValue {
+				real: 1.0,
+				unit: SiUnit {second: 1, ..Default::default()},
+			},
+			"mol" => SiValue {
+				real: 1.0,
+				unit: SiUnit {mole: 1, ..Default::default()},
+			},
+			"A" => SiValue {
+				real: 1.0,
+				unit: SiUnit {ampere: 1, ..Default::default()},
+			},
+			"K" => SiValue {
+				real: 1.0,
+				unit: SiUnit {kelvin: 1, ..Default::default()},
+			},
+			"cd" => SiValue {
+				real: 1.0,
+				unit: SiUnit {candela: 1, ..Default::default()},
+			},
+			"kg" => SiValue {
+				real: 1.0,
+				unit: SiUnit {kilogram: 1, ..Default::default()},
+			},
+			// standard SI variants
+			"Pa" => SiValue::from("N".to_string()) * SiValue::from("m".to_string()).pow(-2),
+			"N" => SiValue::from("kg".to_string()) * SiValue::from("m".to_string()) * SiValue::from("s".to_string()).pow(-2),
+			"J" => SiValue::from("N".to_string()) * SiValue::from("m".to_string()),
+			"W" => SiValue::from("J".to_string()) * SiValue::from("s".to_string()).pow(-1),
+			"kW" => SiValue::from("W".to_string()) * 1000.0,
+			"MW" => SiValue::from("W".to_string()) * 1_000_000.0,
+			"km" => SiValue::from("m".to_string()) * 1000.0,
+			"cm" => SiValue::from("m".to_string()) * 0.01,
+			"mm" => SiValue::from("m".to_string()) * 0.001,
+			"mL" => SiValue::from("cm".to_string()).pow(3),
+			"L" => SiValue::from("mL".to_string()) * 1000.0,
+			// common time measurements
+			"ms" => SiValue::from("s".to_string()) * 0.001,
+			"us" => SiValue::from("ms".to_string()) * 0.001,
+			"hr" => SiValue::from("s".to_string()) * 3600.0,
+			"day" => SiValue::from("hr".to_string()) * 24.0,
+			"yr" => SiValue::from("day".to_string()) * 365.25,
+			// common imperial units
+			"ft" => SiValue::from("m".to_string()) * 0.3048,
+			"lbf" => SiValue::from("N".to_string()) * 4.448,
+			"in" => SiValue::from("m".to_string()) * 0.0254,
+			"thou" => SiValue::from("in".to_string()) * 0.001,
+			"mile" => SiValue::from("m".to_string()) * 1609.0,
+			"mph" => SiValue::from("m".to_string()) * SiValue::from("s".to_string()).pow(-1) * 0.447,
+			_ => { panic!("uninplemented unit name"); }
 		}
 	}
 }
