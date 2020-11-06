@@ -34,7 +34,14 @@ pub fn lex(input: &str) -> Result<Vec<Token>, LexError> {
 
 	for c in input.chars() {
 		// clean out whitespace
-		if c.is_whitespace() {continue;}
+		if c.is_whitespace() {
+			// whitespace should terminate any ongoing token
+			if let Some(ot) = ongoing_token {
+				res.push(ot);
+				ongoing_token = None;
+			}
+			continue;
+		}
 
 		if let Some(ot) = ongoing_token {
 			if ot.is_continuation(c) {
