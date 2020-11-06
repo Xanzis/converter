@@ -9,7 +9,7 @@ use std::io;
 use std::error;
 use std::fmt;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct ConvertError {
 	message: String,
 }
@@ -21,6 +21,12 @@ impl ConvertError {
 }
 
 impl fmt::Display for ConvertError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl fmt::Debug for ConvertError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.message)
     }
@@ -59,7 +65,10 @@ fn main() -> Result<(), ConvertError> {
     		if input == "break" {
     			break
     		}
-    		println!("result is:\n{}", run(input)?);
+    		match run(input) {
+    			Ok(res) => println!("result is:\n{}", res),
+    			Err(e) => println!("error: {}", e),
+    		}
     	}
 	}
 	else {
