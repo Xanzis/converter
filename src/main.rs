@@ -1,6 +1,6 @@
-use convert::lexer::{lex, LexError};
-use convert::parser::{parse, ParseError};
-use convert::evaluator::{evaluate, EvaluateError};
+use convert::lexer::lex;
+use convert::parser::parse;
+use convert::evaluator::evaluate;
 use convert::units::SiValue;
 
 use std::env;
@@ -20,28 +20,14 @@ impl ConvertError {
 	}
 }
 
-impl error::Error for ConvertError {}
-
 impl fmt::Display for ConvertError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.message)
     }
 }
 
-impl From<LexError> for ConvertError {
-	fn from(e: LexError) -> Self {
-		ConvertError { message: format!("convert_error: {}", e) }
-	}
-}
-
-impl From<ParseError> for ConvertError {
-	fn from(e: ParseError) -> Self {
-		ConvertError { message: format!("convert_error: {}", e) }
-	}
-}
-
-impl From<EvaluateError> for ConvertError {
-	fn from(e: EvaluateError) -> Self {
+impl<T: error::Error> From<T> for ConvertError {
+	fn from(e: T) -> Self {
 		ConvertError { message: format!("convert_error: {}", e) }
 	}
 }

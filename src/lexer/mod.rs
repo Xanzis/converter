@@ -4,6 +4,7 @@ pub use token::{Token, TokenError};
 use std::string::String;
 use std::str;
 use std::fmt;
+use std::error;
 
 //type Result<T> = std::result::Result<T, LexError>;
 #[derive(Clone, Debug)]
@@ -22,6 +23,8 @@ impl From<TokenError> for LexError {
 		LexError { message: format!("lex_error: {}", e) }
 	}
 }
+
+impl error::Error for LexError {}
 
 pub fn lex(input: &str) -> Result<Vec<Token>, LexError> {
 	// lex the input for future use in the parser
