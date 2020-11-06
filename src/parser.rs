@@ -6,7 +6,7 @@ use std::error;
 // expression -> term
 // term       -> factor (("-" | "+") term)?
 // factor     -> quantity (("*" | "/") factor)?
-// quantity   -> primary unit_pow?
+// quantity   -> primary unit_pow*
 // primary    -> i64 | f64 | "(" expression ")" | unit_pow
 // unit_pow   -> String (i64)?
 
@@ -105,18 +105,21 @@ fn factor(tokens: &mut Vec<Token>) -> Result<Expression, ParseError> {
 fn quantity(tokens: &mut Vec<Token>) -> Result<Expression, ParseError> {
 	// consume a primary plus an optional unit_pow
 	// TODO allow arbitrarily many unit_pows
-	let res_inter = primary(tokens)?;
+	let mut res_inter = primary(tokens)?;
 
-	match tokens.last() {
-		None => Ok(res_inter),
-		Some(Token::UnitString(_)) => {
-			// next expression is a unit_pow
-			if let Some(res_unit) = unit_pow(tokens) {
-				return Ok(Expression::Quantity(Box::new(res_inter), Box::new(res_unit)))
+	// consume any trailing unit_pows
+	loop {
+		match tokens.last() {
+			None => break Ok(res_inter),
+			Some(Token::UnitString(_)) => {
+				// next expression is a unit_pow
+				if let Some(res_unit) = unit_pow(tokens) {
+					res_inter = Expression::Quantity(Box::new(res_inter), Box::new(res_unit));
+				}
+				else { break Err(ParseError::new("began with unitstring but wasn't unit_pow")) }
 			}
-			else { Err(ParseError::new("began with unitstring but wasn't unit_pow")) }
+			_ => break Ok(res_inter)
 		}
-		_ => Ok(res_inter)
 	}
 }
 
