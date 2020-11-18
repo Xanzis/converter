@@ -71,6 +71,18 @@ fn main() -> Result<(), ConvertError> {
     		}
     	}
 	}
+    else if args.iter().any(|i| i=="-n") {
+        // accept a single expression from stdin and evaluate
+        let mut input = String::new();
+        io::stdin()
+            .read_line(&mut input)
+            .expect("read failure");
+        let input = input.trim();
+        match run(input) {
+            Ok(res) => println!("{}", res),
+            Err(e) => println!("error: {}", e),
+        }
+    }
 	else {
 		let input = args.get(1).unwrap();
 		println!("result is:\n{}", run(input)?);
