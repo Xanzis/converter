@@ -48,8 +48,8 @@ mod tests {
 		let in_str = "1 + 2 + 3";
 		let lexed = lex(in_str).unwrap();
 		let parsed = parse(lexed).unwrap();
-		let lower = Binary(Box::new(PrimaryInt(2)), '+', Box::new(PrimaryInt(3)));
-		let exp = Box::new(Binary(Box::new(PrimaryInt(1)), '+', Box::new(lower)));
+		let lower = Binary(Box::new(PrimaryInt(1)), '+', Box::new(PrimaryInt(2)));
+		let exp = Box::new(Binary(Box::new(lower), '+', Box::new(PrimaryInt(3))));
 		assert_eq!(exp, parsed);
 	}
 }
