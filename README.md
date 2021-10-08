@@ -5,8 +5,8 @@ Units (optionally followed by powers) are acceptable primary values, and are gro
 
 ---
 
-##Usage
+## Usage
 
-`cargo run -- [-i | "expression"]`
+`converter [-i | "expression"]`
 
 A provided string will be parsed and evaluated, while `-i` evaluates expressions on loop.
